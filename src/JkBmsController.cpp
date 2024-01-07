@@ -1,13 +1,13 @@
 #include <Arduino.h>
+#include "Scheduler.h"
 #include "Configuration.h"
 #include "HardwareSerial.h"
 #include "PinMapping.h"
 #include "MessageOutput.h"
 #include "JkBmsDataPoints.h"
 #include "JkBmsController.h"
-#include <frozen/map.h>
 
-//#define JKBMS_DUMMY_SERIAL
+#define JKBMS_DUMMY_SERIAL
 
 #ifdef JKBMS_DUMMY_SERIAL
 class DummySerial {
@@ -236,6 +236,18 @@ bool Controller::init(bool verboseLogging)
     pinMode(_rxEnablePin, OUTPUT);
     pinMode(_txEnablePin, OUTPUT);
 
+    scheduler.addTask(_receiveTask);
+    _receiveTask.setCallback(std::bind(&Controller::receive, this));
+    _receiveTask.setIterations(TASK_FOREVER);
+    _receiveTask.setInterval(10 * TASK_MILLISECOND);
+
+    scheduler.addTask(_sendTask);
+    _sendTask.setCallback(std::bind(&Controller::send, this));
+    _sendTask.setIterations(TASK_FOREVER);
+    //auto pollInterval = Configuration.get().Battery.JkBmsPollingInterval;
+    //_sendTask.setInterval(pollInterval * TASK_SECOND);
+    _sendTask.enable();
+
     return true;
 }
 
@@ -255,48 +267,27 @@ Controller::Interface Controller::getInterface() const
     return Interface::Invalid;
 }
 
-frozen::string const& Controller::getStatusText(Controller::Status status)
+static void announceStatus(char const* status)
 {
-    static constexpr frozen::string missing = "programmer error: missing status text";
-
-    static constexpr frozen::map<Status, frozen::string, 6> texts = {
-        { Status::Timeout, "timeout wating for response from BMS" },
-        { Status::WaitingForPollInterval, "waiting for poll interval to elapse" },
-        { Status::HwSerialNotAvailableForWrite, "UART is not available for writing" },
-        { Status::BusyReading, "busy waiting for or reading a message from the BMS" },
-        { Status::RequestSent, "request for data sent" },
-        { Status::FrameCompleted, "a whole frame was received" }
-    };
-
-    auto iter = texts.find(status);
-    if (iter == texts.end()) { return missing; }
-
-    return iter->second;
-}
-
-void Controller::announceStatus(Controller::Status status)
-{
-    if (_lastStatus == status && millis() < _lastStatusPrinted + 10 * 1000) { return; }
-
     MessageOutput.printf("[%11.3f] JK BMS: %s\r\n",
-        static_cast<double>(millis())/1000, getStatusText(status).data());
-
-    _lastStatus = status;
-    _lastStatusPrinted = millis();
+        static_cast<double>(millis())/1000, status);
 }
 
-void Controller::sendRequest(uint8_t pollInterval)
+void Controller::send()
 {
-    if (ReadState::Idle != _readState) {
-        return announceStatus(Status::BusyReading);
+    MessageOutput.println("JkBms::Controller::send");
+    if (ReadState::WaitingForFrameStart == _readState) {
+        announceStatus("timeout waiting for response from BMS");
+        reset();
     }
 
-    if ((millis() - _lastRequest) < pollInterval * 1000) {
-        return announceStatus(Status::WaitingForPollInterval);
+    if (ReadState::Idle != _readState) {
+        announceStatus("discarding incomplete response from BMS");
+        reset();
     }
 
     if (!HwSerial.availableForWrite()) {
-        return announceStatus(Status::HwSerialNotAvailableForWrite);
+        return announceStatus("UART is not available for write");
     }
 
     SerialCommand readAll(SerialCommand::Command::ReadAll);
@@ -314,26 +305,15 @@ void Controller::sendRequest(uint8_t pollInterval)
         digitalWrite(_txEnablePin, LOW); // disable transmission (free the bus)
     }
 
-    _lastRequest = millis();
-
     setReadState(ReadState::WaitingForFrameStart);
-    return announceStatus(Status::RequestSent);
+    _receiveTask.enable();
+    return announceStatus("request for data sent");
 }
 
-void Controller::loop()
+void Controller::receive()
 {
-    CONFIG_T& config = Configuration.get();
-    uint8_t pollInterval = config.Battery.JkBmsPollingInterval;
-
     while (HwSerial.available()) {
         rxData(HwSerial.read());
-    }
-
-    sendRequest(pollInterval);
-
-    if (millis() > _lastRequest + 2 * pollInterval * 1000 + 250) {
-        reset();
-        return announceStatus(Status::Timeout);
     }
 }
 
@@ -382,7 +362,7 @@ void Controller::reset()
 
 void Controller::frameComplete()
 {
-    announceStatus(Status::FrameCompleted);
+    announceStatus("a whole frame was received");
 
     if (_verboseLogging) {
         double ts = static_cast<double>(millis())/1000;
@@ -402,6 +382,7 @@ void Controller::frameComplete()
         processDataPoints(pResponse->getDataPoints());
     } // if invalid, error message has been produced by SerialResponse c'tor
 
+    _receiveTask.disable(); // we don't expect unsolicited messages
     reset();
 }
 

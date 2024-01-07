@@ -2,6 +2,7 @@
 #include "VictronSmartShunt.h"
 #include "Configuration.h"
 #include "PinMapping.h"
+#include "Scheduler.h"
 #include "MessageOutput.h"
 
 
@@ -22,6 +23,13 @@ bool VictronSmartShunt::init(bool verboseLogging)
     auto rx = static_cast<gpio_num_t>(pin.battery_rx);
 
     VeDirectShunt.init(rx, tx, &MessageOutput, verboseLogging);
+
+    scheduler.addTask(_loopTask);
+    _loopTask.setCallback(std::bind(&VictronSmartShunt::loop, this));
+    _loopTask.setIterations(TASK_FOREVER);
+    _loopTask.setInterval(100 * TASK_MILLISECOND);
+    _loopTask.enable();
+
     return true;
 }
 

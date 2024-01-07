@@ -3,6 +3,7 @@
 #include "Configuration.h"
 #include "MessageOutput.h"
 #include "PinMapping.h"
+#include "Scheduler.h"
 #include <driver/twai.h>
 #include <ctime>
 
@@ -62,6 +63,11 @@ bool PylontechCanReceiver::init(bool verboseLogging)
             return false;
             break;
     }
+
+    scheduler.addTask(_loopTask);
+    _loopTask.setCallback(std::bind(&PylontechCanReceiver::loop, this));
+    _loopTask.setIterations(TASK_FOREVER);
+    _loopTask.enable();
 
     return true;
 }

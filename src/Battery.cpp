@@ -6,6 +6,7 @@
 #include "JkBmsController.h"
 #include "VictronSmartShunt.h"
 #include "MqttBattery.h"
+#include "Scheduler.h"
 
 BatteryClass Battery;
 
@@ -21,12 +22,13 @@ std::shared_ptr<BatteryStats const> BatteryClass::getStats() const
     return _upProvider->getStats();
 }
 
-void BatteryClass::init(Scheduler& scheduler)
+void BatteryClass::init(Scheduler& s)
 {
-    scheduler.addTask(_loopTask);
-    _loopTask.setCallback(std::bind(&BatteryClass::loop, this));
-    _loopTask.setIterations(TASK_FOREVER);
-    _loopTask.enable();
+    MessageOutput.printf("scheduler = %p, s = %p\r\n", &scheduler, &s);
+    scheduler.addTask(_mqttPublishTask);
+    _mqttPublishTask.setCallback(std::bind(&BatteryClass::mqttPublish, this));
+    _mqttPublishTask.setIterations(TASK_FOREVER);
+    _mqttPublishTask.enable();
 
     this->updateSettings();
 }
@@ -38,9 +40,11 @@ void BatteryClass::updateSettings()
     if (_upProvider) {
         _upProvider->deinit();
         _upProvider = nullptr;
+        _mqttPublishTask.disable();
+        MessageOutput.println("disabled _mqttPublish task");
     }
 
-    CONFIG_T& config = Configuration.get();
+    auto const& config = Configuration.get();
     if (!config.Battery.Enabled) { return; }
 
     bool verboseLogging = config.Battery.VerboseLogging;
@@ -66,24 +70,24 @@ void BatteryClass::updateSettings()
             MessageOutput.printf("Unknown battery provider: %d\r\n", config.Battery.Provider);
             break;
     }
+
+    if (_upProvider) {
+        _mqttPublishTask.setInterval(config.Mqtt.PublishInterval * TASK_SECOND);
+        _mqttPublishTask.enable();
+        MessageOutput.println("re-enabled _mqttPublish task");
+    }
 }
 
-void BatteryClass::loop()
+void BatteryClass::mqttPublish()
 {
-    std::lock_guard<std::mutex> lock(_mutex);
+    MessageOutput.println("this is BatteryClass::mqttPublish()");
+    std::unique_lock<std::mutex> lock(_mutex);
 
-    if (!_upProvider) { return; }
+    if (!_upProvider || !MqttSettings.getConnected()) { return; }
 
-    _upProvider->loop();
+    auto spStats = _upProvider->getStats();
 
-    CONFIG_T& config = Configuration.get();
+    lock.unlock();
 
-    if (!MqttSettings.getConnected()
-            || (millis() - _lastMqttPublish) < (config.Mqtt.PublishInterval * 1000)) {
-        return;
-    }
-
-    _upProvider->getStats()->mqttPublish();
-
-    _lastMqttPublish = millis();
+    spStats->mqttPublish();
 }

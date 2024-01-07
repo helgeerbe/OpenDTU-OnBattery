@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <vector>
-#include <frozen/string.h>
+#include <TaskSchedulerDeclarations.h>
 
 #include "Battery.h"
 #include "JkBmsSerialMessage.h"
@@ -17,7 +17,6 @@ class Controller : public BatteryProvider {
 
         bool init(bool verboseLogging) final;
         void deinit() final;
-        void loop() final;
         std::shared_ptr<BatteryStats> getStats() const final { return _stats; }
 
     private:
@@ -31,9 +30,8 @@ class Controller : public BatteryProvider {
             FrameCompleted
         };
 
-        frozen::string const& getStatusText(Status status);
-        void announceStatus(Status status);
-        void sendRequest(uint8_t pollInterval);
+        void send();
+        void receive();
         void rxData(uint8_t inbyte);
         void reset();
         void frameComplete();
@@ -60,12 +58,11 @@ class Controller : public BatteryProvider {
             _readState = state;
         }
 
+        Task _sendTask;
+        Task _receiveTask;
         bool _verboseLogging = true;
         int8_t _rxEnablePin = -1;
         int8_t _txEnablePin = -1;
-        Status _lastStatus = Status::Initializing;
-        uint32_t _lastStatusPrinted = 0;
-        uint32_t _lastRequest = 0;
         uint16_t _frameLength = 0;
         uint8_t _protocolVersion = -1;
         SerialResponse::tData _buffer = {};

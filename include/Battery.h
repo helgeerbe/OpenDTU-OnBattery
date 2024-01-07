@@ -14,7 +14,6 @@ class BatteryProvider {
         virtual bool init(bool verboseLogging) = 0;
 
         virtual void deinit() = 0;
-        virtual void loop() = 0;
         virtual std::shared_ptr<BatteryStats> getStats() const = 0;
 };
 
@@ -25,11 +24,10 @@ class BatteryClass {
 
         std::shared_ptr<BatteryStats const> getStats() const;
     private:
-        void loop();
+        void mqttPublish();
 
-        Task _loopTask;
+        Task _mqttPublishTask;
 
-        uint32_t _lastMqttPublish = 0;
         mutable std::mutex _mutex;
         std::unique_ptr<BatteryProvider> _upProvider = nullptr;
 };
