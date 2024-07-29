@@ -52,4 +52,10 @@ private:
     bool processTextDataDerived(std::string const& name, std::string const& value) final;
     void frameValidEvent() final;
     MovingAverage<float, 5> _efficiency;
+    int8_t _slotNr = 0;
+    std::array<VeDirectHexRegister, 5> _slotRegister { VeDirectHexRegister::NetworkTotalDcInputPower,
+                                                       VeDirectHexRegister::ChargeControllerTemperature,
+                                                       VeDirectHexRegister::SmartBatterySenseTemperature,
+                                                       VeDirectHexRegister::BatteryFloatVoltage,
+                                                       VeDirectHexRegister::BatteryAbsorptionVoltage  };
 };

@@ -85,6 +85,7 @@ bool VictronMpptClass::isDataValid() const
 
     for (auto const& upController: _controllers) {
         if (upController->isDataValid()) { return true; }
+        if (upController->isDataValid()) { return true; }
     }
 
     return !_controllers.empty();
@@ -225,4 +226,45 @@ float VictronMpptClass::getOutputVoltage() const
     }
 
     return min;
+}
+
+/*
+ * getStateOfOperation()
+ * return:  the state from the first available controller or
+ *          -1 if data is not available
+ */
+int16_t VictronMpptClass::getStateOfOperation() const
+{
+    for (const auto& upController : _controllers) {
+        if (upController->isDataValid())
+            return static_cast<int16_t>(upController->getData().currentState_CS);
+    }
+
+    return -1;
+}
+
+/*
+ * getVoltage()
+ * return:  the configured value from the first available controller in V or
+ *          -1V if data is not available
+ */
+float VictronMpptClass::getVoltage(MPPTVoltage kindOf) const
+{
+    std::pair<uint32_t, uint32_t> voltX;
+
+    for (const auto& upController : _controllers) {
+        switch (kindOf) {
+            case MPPTVoltage::ABSORPTION:
+                voltX = upController->getData().BatteryAbsorptionMilliVolt;
+                break;
+            case MPPTVoltage::FLOAT:
+                voltX = upController->getData().BatteryFloatMilliVolt;
+                break;
+        }
+        if (voltX.first > 0) {
+            return static_cast<float>(voltX.second / 1000.0);
+        }
+    }
+
+    return -1.0f;
 }
