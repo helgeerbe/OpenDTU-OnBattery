@@ -85,7 +85,6 @@ bool VictronMpptClass::isDataValid() const
 
     for (auto const& upController: _controllers) {
         if (upController->isDataValid()) { return true; }
-        if (upController->isDataValid()) { return true; }
     }
 
     return !_controllers.empty();
