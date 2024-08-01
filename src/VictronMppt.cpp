@@ -250,7 +250,7 @@ int16_t VictronMpptClass::getStateOfOperation() const
  */
 float VictronMpptClass::getVoltage(MPPTVoltage kindOf) const
 {
-    std::pair<uint32_t, uint32_t> voltX;
+    std::pair<uint32_t, uint32_t> voltX {0,0};
 
     for (const auto& upController : _controllers) {
         switch (kindOf) {
