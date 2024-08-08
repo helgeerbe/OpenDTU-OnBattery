@@ -104,38 +104,51 @@ void VeDirectMpptController::frameValidEvent() {
 	} else {
 		_tmpFrame.mpptEfficiency_Percent = 0.0f;
 	}
-
-	if (!_canSend) { return; }
-
-	// Copy from the "VE.Direct Protocol" documentation
-	// For firmware version v1.52 and below, when no VE.Direct queries are sent to the device, the
-	// charger periodically sends human readable (TEXT) data to the serial port. For firmware
-	// versions v1.53 and above, the charger always periodically sends TEXT data to the serial port.
-	// --> We just use hex commands for firmware >= 1.53 to keep text messages alive
-	if (_tmpFrame.getFwVersionAsInteger() < 153) { return; }
-
-	// It seems some commands get lost if we send to fast the next command.
-	// Maybe we produce an overflow on the MPPT receive buffer or we have to wait for the MPPT answer
-	// before we can send the next command.
-	// Now we send only one command after every text-mode-frame.
-	// We need a better solution if we add more commands
-	// Don't worry about the NetworkTotalDcInputPower. We get anyway asynchronous messages on every value change
-	sendHexCommand(VeDirectHexCommand::GET, _slotRegister[_slotNr++]);
-	if (_slotNr >= _slotRegister.size())
-		_slotNr = 0;
-
-#ifdef PROCESS_NETWORK_STATE
-	sendHexCommand(Command::GET, Register::NetworkInfo);
-	sendHexCommand(Command::GET, Register::NetworkMode);
-	sendHexCommand(Command::GET, Register::NetworkStatus);
-#endif // PROCESS_NETWORK_STATE
 }
 
 
 void VeDirectMpptController::loop()
 {
+	// Copy from the "VE.Direct Protocol" documentation
+	// For firmware version v1.52 and below, when no VE.Direct queries are sent to the device, the
+	// charger periodically sends human readable (TEXT) data to the serial port. For firmware
+	// versions v1.53 and above, the charger always periodically sends TEXT data to the serial port.
+	// --> We just use hex commands for firmware >= 1.53 to keep text messages alive
+	// Note: First we send queries (timing improvement)
+	if (_canSend && (_tmpFrame.getFwVersionAsInteger() >= 153)) {
+
+		// It seems some commands get lost if we send to fast the next command.
+		// maybe we produce an overflow on the MPPT receive buffer or we have to wait for the MPPT answer
+		// before we can send the next command.
+		// We only send a new query in VE.Direct idle state and if no query is pending
+		// In case we do not get an answer we send the next query from the queue after a timeout of 500ms
+		// Note: _sendTimeout will be set to 0 after receiving an answer, see function hexDataHandler()
+		auto millisTime = millis();
+		if (isStateIdle() && ((millisTime - _sendTimeStamp) > _sendTimeout)) {
+
+			for (auto idx = 0; idx < _hexQueue.size(); ++idx) {
+
+				// we check if it is time to update a value
+				if ((millisTime - _hexQueue[idx]._lastSendTime) > (_hexQueue[idx]._readPeriod * 1000)) {
+					sendHexCommand(VeDirectHexCommand::GET, _hexQueue[idx]._hexRegister);
+					_hexQueue[idx]._lastSendTime = millisTime;
+					_sendTimeStamp = millisTime;
+
+					// we need this information to check if we get an answer, see hexDataHandler()
+					_sendTimeout = 500;
+					_sendQueueNr = idx;
+					break;
+				}
+			}
+
+		}
+	}
+
+	// Second we read the messages
 	VeDirectFrameHandler::loop();
 
+	// Third we check if hex data is outdated
+	// Note: Room for improvement, longer data valid time for slow changing values
 	auto resetTimestamp = [this](auto& pair) {
 		if (pair.first > 0 && (millis() - pair.first) > (10 * 1000)) {
 			pair.first = 0;
@@ -166,6 +179,10 @@ bool VeDirectMpptController::hexDataHandler(VeDirectHexData const &data) {
 			data.rsp != VeDirectHexResponse::ASYNC) { return false; }
 
 	auto regLog = static_cast<uint16_t>(data.addr);
+
+	// we check if we get we right answer to our query
+	if ((data.rsp == VeDirectHexResponse::GET) && (data.addr == _hexQueue[_sendQueueNr]._hexRegister))
+		_sendTimeout = 0;
 
 	switch (data.addr) {
 		case VeDirectHexRegister::ChargeControllerTemperature:
