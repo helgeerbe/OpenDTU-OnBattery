@@ -23,9 +23,6 @@
 #include "SurplusPower.h"
 
 
-// support for debugging, 0 = without extended logging, 1 = with extended logging, 2 = with more extended logging
-constexpr int MODULE_DEBUG = 2;
-
 
 #define DELTA_VOLTAGE 0.05f     // we allow some difference between absorption voltage and target voltage
 #define MAX_STEPS 20            // amount of power steps for the approximation
@@ -194,7 +191,7 @@ int32_t SurplusPowerClass::calcSurplusPower(int32_t const requestedPower) {
 
 
     // todo: maybe we can delete some additional informations after the test phase
-    if (config.PowerLimiter.VerboseLogging || MODULE_DEBUG >= 2) {
+    if (config.PowerLimiter.VerboseLogging) {
         MessageOutput.printf("%s Target voltage: %0.2fV, Battery voltage: %0.2f, Average battery voltage: %0.3fV\r\n",
             getText(Text::T_HEAD).data(), targetVoltage, mpptVoltage, avgMPPTVoltage);
 
