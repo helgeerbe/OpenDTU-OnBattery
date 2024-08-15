@@ -17,6 +17,7 @@
 #include <ctime>
 #include <cmath>
 #include <frozen/map.h>
+#include "SurplusPower.h"
 
 PowerLimiterClass PowerLimiter;
 
@@ -522,6 +523,10 @@ bool PowerLimiterClass::calcPowerLimit(std::shared_ptr<InverterAbstract> inverte
         MessageOutput.printf("[DPL::calcPowerLimit] match household consumption with limit of %d W\r\n",
             newPowerLimit);
     }
+
+    // use surplus power if active
+    if (SurplusPower.useSurplusPower())
+        newPowerLimit = SurplusPower.calcSurplusPower(newPowerLimit);
 
     // Case 3:
     return setNewPowerLimit(inverter, newPowerLimit);
