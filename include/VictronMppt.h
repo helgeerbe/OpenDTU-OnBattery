@@ -49,6 +49,7 @@ public:
     enum class MPPTVoltage : uint8_t {
             ABSORPTION = 0,
             FLOAT = 1,
+            BATTERY = 2
     };
     float getVoltage(MPPTVoltage kindOf) const;
 

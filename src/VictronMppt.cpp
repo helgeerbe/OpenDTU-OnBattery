@@ -259,6 +259,12 @@ float VictronMpptClass::getVoltage(MPPTVoltage kindOf) const
             case MPPTVoltage::FLOAT:
                 voltX = upController->getData().BatteryFloatMilliVolt;
                 break;
+            case MPPTVoltage::BATTERY:
+                if (upController->isDataValid()) {
+                    voltX.first = 1;
+                    voltX.second = upController->getData().batteryVoltage_V_mV;
+                }
+                break;
         }
         if (voltX.first > 0) {
             return static_cast<float>(voltX.second / 1000.0);
