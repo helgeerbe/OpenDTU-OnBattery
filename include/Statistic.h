@@ -9,18 +9,17 @@ public:
       , _count(0), _countNum(0), _avgV(0), _minV(0), _maxV(0), _lastV(0)  {}
 
     void addNumber(const T& num) {
-      if (_count == 0){
+      if (_count == 0) {
           _count++;
           _avgV = num;
           _minV = num;
           _maxV = num;
           _countNum = 1;
       } else {
-          if (_count < _countMax)
-              _count++;
+          if (_count < _countMax) { _count++; }
           _avgV = (_avgV * (_count - 1) + num) / _count;
-          if (num < _minV) _minV = num;
-          if (num > _maxV) _maxV = num;
+          if (num < _minV) { _minV = num; }
+          if (num > _maxV) { _maxV = num; }
           _countNum++;
       }
       _lastV = num;

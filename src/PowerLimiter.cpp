@@ -529,8 +529,9 @@ bool PowerLimiterClass::calcPowerLimit(std::shared_ptr<InverterAbstract> inverte
     }
 
     // use surplus power if active
-    if (SurplusPower.useSurplusPower())
+    if (SurplusPower.useSurplusPower()) {
         newPowerLimit = SurplusPower.calcSurplusPower(newPowerLimit);
+    }
 
     // Case 3:
     return setNewPowerLimit(inverter, newPowerLimit);

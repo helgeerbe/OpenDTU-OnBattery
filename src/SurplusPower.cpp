@@ -4,7 +4,7 @@
  * Surplus solar power is available when the battery is (almost) full and the available
  * solar power is higher than the power consumed in the household.
  *
- * Basic principe:
+ * Basic principle:
  * In absorption- and float-mode the MPPT acts like a constant voltage source with current limiter.
  * In that modes we do not get any reliable maximum power or maximum current information from the MPPT.
  * To find the maximum solar power we regulate the inverter power, we go higher and higher, step by step,
@@ -41,9 +41,8 @@ SurplusPowerClass SurplusPower;
  * return:  true = enabled, false = not enabled
  */
 bool SurplusPowerClass::useSurplusPower(void) const {
-    CONFIG_T const& config = Configuration.get();
 
-    return (config.PowerLimiter.SurplusPowerEnabled) ? true : false;
+    return (Configuration.get().PowerLimiter.SurplusPowerEnabled);
 }
 
 
@@ -52,8 +51,9 @@ bool SurplusPowerClass::useSurplusPower(void) const {
  * check if the regulation quality counter can be added to the quality statistic
  */
 void SurplusPowerClass::handleQualityCounter(void) {
-    if (_qualityCounter != 0)
+    if (_qualityCounter != 0) {
         _qualityAVG.addNumber(_qualityCounter);
+    }
     _qualityCounter = 0;
 }
 
@@ -76,9 +76,9 @@ int32_t SurplusPowerClass::calcSurplusPower(int32_t const requestedPower) {
 
     // get the absorption/float voltage from MPPT
     auto xVoltage = VictronMppt.getVoltage(VictronMpptClass::MPPTVoltage::ABSORPTION);
-    if (xVoltage != NOT_VALID) _absorptionVoltage = xVoltage;
+    if (xVoltage != NOT_VALID) { _absorptionVoltage = xVoltage; }
     xVoltage = VictronMppt.getVoltage(VictronMpptClass::MPPTVoltage::FLOAT);
-    if (xVoltage != NOT_VALID) _floatVoltage = xVoltage;
+    if (xVoltage != NOT_VALID) { _floatVoltage = xVoltage; }
     if ((_absorptionVoltage == NOT_VALID) || (_floatVoltage == NOT_VALID)) {
         MessageOutput.printf("%s Not possible. Absorption/Float voltage from MPPT is not available\r\n",
         getText(Text::T_HEAD).data());
@@ -175,16 +175,17 @@ int32_t SurplusPowerClass::calcSurplusPower(int32_t const requestedPower) {
 
         // quality check: we count every power step polarity change ( + to -  and - to +)
         // to give an indication of the regulation quality
-        if (((_lastAddPower < 0) && (addPower > 0)) || ((_lastAddPower > 0) && (addPower < 0)))
+        if (((_lastAddPower < 0) && (addPower > 0)) || ((_lastAddPower > 0) && (addPower < 0))) {
             _qualityCounter++;
+        }
         _lastAddPower = addPower;
     }
 
     // print some basic information
     auto qualityAVG = _qualityAVG.getAverage();
     Text text = Text::Q_BAD;
-    if ((qualityAVG >= 0.0f) && (qualityAVG <= 1.0f)) text = Text::Q_EXCELLENT;
-    if ((qualityAVG > 1.0f) && (qualityAVG <= 2.0f)) text = Text::Q_GOOD;
+    if ((qualityAVG >= 0.0f) && (qualityAVG <= 1.0f)) { text = Text::Q_EXCELLENT; }
+    if ((qualityAVG > 1.0f) && (qualityAVG <= 2.0f)) { text = Text::Q_GOOD; }
     MessageOutput.printf("%s Mode: %s, Quality: %s, Surplus power: %iW, Requested power: %iW, Returned power: %iW\r\n",
         getText(Text::T_HEAD).data(), getStatusText(_surplusState).data(), getText(text).data(),
         _surplusPower, requestedPower, backPower);
