@@ -368,7 +368,7 @@
         "Disconnected": "disconnected"
     },
     "vedirectinfo": {
-        "VedirectInformation" : "VE.Direct Info",
+        "VedirectInformation": "VE.Direct Info",
         "ConfigurationSummary": "@:ntpinfo.ConfigurationSummary",
         "Status": "@:ntpinfo.Status",
         "Enabled": "@:mqttinfo.Enabled",
@@ -555,7 +555,7 @@
         "VerboseLogging": "@:base.VerboseLogging",
         "UpdatesOnly": "Publish values to MQTT only when they change"
     },
-    "powermeteradmin":{
+    "powermeteradmin": {
         "PowerMeterSettings": "Power Meter Settings",
         "PowerMeterConfiguration": "Power Meter Configuration",
         "PowerMeterEnable": "Enable Power Meter",
@@ -675,8 +675,13 @@
         "ProviderVictron": "Victron SmartShunt using VE.Direct interface",
         "ProviderPytesCan": "Pytes using CAN bus",
         "MqttConfiguration": "MQTT Settings",
-        "MqttSocTopic": "SoC value topic",
-        "MqttVoltageTopic": "Voltage value topic",
+        "MqttSocConfiguration": "SoC Settings",
+        "MqttVoltageConfiguration": "Voltage Settings",
+        "MqttJsonPath": "Optional: JSON Path",
+        "MqttJsonPathDescription": "Application specific JSON path to find the value in the JSON payload, e.g., 'electricLevel'. Leave empty if the topic's payload contains a plain numeric value.",
+        "MqttVoltageUnit": "Unit",
+        "MqttSocTopic": "SoC Value Topic",
+        "MqttVoltageTopic": "Voltage Value Topic",
         "JkBmsConfiguration": "JK BMS Settings",
         "JkBmsInterface": "Interface Type",
         "JkBmsInterfaceUart": "TTL-UART on MCU",
@@ -764,6 +769,7 @@
     "firmwareupgrade": {
         "FirmwareUpgrade": "Firmware Upgrade",
         "Loading": "@:base.Loading",
+        "NoOtaSupport": "This platform does not support OTA updates. New firmware can be written to flash memory using the USB interface.",
         "OtaError": "OTA Error",
         "Back": "Back",
         "Retry": "Retry",
@@ -842,7 +848,7 @@
         "format_herf_valid": "E-Star HERF format (will be saved converted): {serial}",
         "format_herf_invalid": "E-Star HERF format: Invalid checksum",
         "format_unknown": "Unknown format"
-      },
+    },
     "huawei": {
         "DataAge": "Data Age: ",
         "Seconds": " {val} seconds",

@@ -41,6 +41,7 @@
 #define POWERMETER_MQTT_MAX_VALUES 3
 #define POWERMETER_HTTP_JSON_MAX_VALUES 3
 #define POWERMETER_HTTP_JSON_MAX_PATH_STRLEN 256
+#define BATTERY_JSON_MAX_PATH_STRLEN 128
 
 struct CHANNEL_CONFIG_T {
     uint16_t MaxChannelPower;
@@ -124,6 +125,8 @@ struct POWERMETER_HTTP_SML_CONFIG_T {
     HttpRequestConfig HttpRequest;
 };
 using PowerMeterHttpSmlConfig = struct POWERMETER_HTTP_SML_CONFIG_T;
+
+enum BatteryVoltageUnit { Volts = 0, DeciVolts = 1, CentiVolts = 2, MilliVolts = 3 };
 
 struct CONFIG_T {
     struct {
@@ -282,7 +285,10 @@ struct CONFIG_T {
         uint8_t JkBmsInterface;
         uint8_t JkBmsPollingInterval;
         char MqttSocTopic[MQTT_MAX_TOPIC_STRLEN + 1];
+        char MqttSocJsonPath[BATTERY_JSON_MAX_PATH_STRLEN + 1];
         char MqttVoltageTopic[MQTT_MAX_TOPIC_STRLEN + 1];
+        char MqttVoltageJsonPath[BATTERY_JSON_MAX_PATH_STRLEN + 1];
+        BatteryVoltageUnit MqttVoltageUnit;
     } Battery;
 
     struct {
