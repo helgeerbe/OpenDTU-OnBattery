@@ -4,7 +4,7 @@
 template <typename T>
 class WeightedAVG {
 public:
-    WeightedAVG(int16_t factor)
+    explicit WeightedAVG(int16_t factor)
       : _countMax(factor)
       , _count(0), _countNum(0), _avgV(0), _minV(0), _maxV(0), _lastV(0)  {}
 
