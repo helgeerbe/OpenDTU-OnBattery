@@ -24,12 +24,12 @@
 
 
 
-#define DELTA_VOLTAGE 0.05f     // we allow some difference between absorption voltage and target voltage
-#define MAX_STEPS 20            // amount of power steps for the approximation
-#define TIME_OUT 60000          // 60 sec regulation step-up timeout
-#define MODE_ABSORPTION 4       // MPPT in absorption mode
-#define MODE_FLOAT 5            // MPPT in float mode
-#define NOT_VALID -1.0f         // if data is not available for any reason
+#define DELTA_VOLTAGE 0.10f             // we allow some difference between absorption voltage and target voltage
+#define MAX_STEPS 20                    // amount of power steps for the approximation
+#define TIME_OUT 60000                  // 60 sec regulation step-up timeout
+#define MODE_ABSORPTION 4               // MPPT in absorption mode
+#define MODE_FLOAT 5                    // MPPT in float mode
+#define NOT_VALID -1.0f                 // if data is not available for any reason
 
 
 SurplusPowerClass SurplusPower;
@@ -80,7 +80,7 @@ int32_t SurplusPowerClass::calcSurplusPower(int32_t const requestedPower) {
     xVoltage = VictronMppt.getVoltage(VictronMpptClass::MPPTVoltage::FLOAT);
     if (xVoltage != NOT_VALID) { _floatVoltage = xVoltage; }
     if ((_absorptionVoltage == NOT_VALID) || (_floatVoltage == NOT_VALID)) {
-        MessageOutput.printf("%s Not possible. Absorption/Float voltage from MPPT is not available\r\n",
+        MessageOutput.printf("%s Error, absorption/float voltage from MPPT is not available\r\n",
         getText(Text::T_HEAD).data());
         return requestedPower;
     }
@@ -89,7 +89,7 @@ int32_t SurplusPowerClass::calcSurplusPower(int32_t const requestedPower) {
     // Note: like the MPPT we use the MPPT voltage and not the voltage from the battery for regulation
     auto mpptVoltage = VictronMppt.getVoltage(VictronMpptClass::MPPTVoltage::BATTERY);
     if (mpptVoltage == NOT_VALID) {
-        MessageOutput.printf("%s Not possible. Battery voltage from MPPT is not available\r\n",
+        MessageOutput.printf("%s Error, battery voltage from MPPT is not available\r\n",
         getText(Text::T_HEAD).data());
         return requestedPower;
     }
@@ -97,12 +97,11 @@ int32_t SurplusPowerClass::calcSurplusPower(int32_t const requestedPower) {
     auto avgMPPTVoltage = _avgMPPTVoltage.getAverage();
 
     // set the regulation target voltage threshold
-    // todo: Check if we need the double DELTA_VOLTAGE on 48V or more power full systems
     auto targetVoltage = (vStOfOp == MODE_ABSORPTION) ? _absorptionVoltage - DELTA_VOLTAGE: _floatVoltage - DELTA_VOLTAGE;
 
     // state machine: hold, increase or decrease the surplus power
     CONFIG_T& config = Configuration.get();
-    int32_t addPower = 0;
+    int32_t addPower {0};
     switch (_surplusState) {
 
         case SurplusState::IDLE:
@@ -112,6 +111,19 @@ int32_t SurplusPowerClass::calcSurplusPower(int32_t const requestedPower) {
             _surplusState = SurplusState::TRY_MORE;
             _qualityCounter = 0;
             _qualityAVG.reset();
+            break;
+
+            case SurplusState::KEEP_LAST_POWER:
+            // during last regulation step the requested power was higher as the surplus power
+            if (mpptVoltage >= targetVoltage) {
+                // again above the target voltage, we try to increase the power
+                _surplusState = SurplusState::TRY_MORE;
+                addPower = _powerStep;
+            } else {
+                // below the target voltage, we keep the last surplus power
+                // but we change the state
+                _surplusState = SurplusState::REDUCE_POWER;
+            }
             break;
 
         case SurplusState::TRY_MORE:
@@ -170,7 +182,8 @@ int32_t SurplusPowerClass::calcSurplusPower(int32_t const requestedPower) {
     // we do not go below the requested power
     auto backPower = _surplusPower;
     if (requestedPower > _surplusPower) {
-        backPower = _surplusPower = requestedPower;
+        backPower = requestedPower;
+        _surplusState = SurplusState::KEEP_LAST_POWER;
     } else {
 
         // quality check: we count every power step polarity change ( + to -  and - to +)
@@ -186,7 +199,7 @@ int32_t SurplusPowerClass::calcSurplusPower(int32_t const requestedPower) {
     Text text = Text::Q_BAD;
     if ((qualityAVG >= 0.0f) && (qualityAVG <= 1.0f)) { text = Text::Q_EXCELLENT; }
     if ((qualityAVG > 1.0f) && (qualityAVG <= 2.0f)) { text = Text::Q_GOOD; }
-    MessageOutput.printf("%s Mode: %s, Quality: %s, Surplus power: %iW, Requested power: %iW, Returned power: %iW\r\n",
+    MessageOutput.printf("%s State: %s, Quality: %s, Surplus P: %iW, Requested P: %iW, Returned P: %iW\r\n",
         getText(Text::T_HEAD).data(), getStatusText(_surplusState).data(), getText(text).data(),
         _surplusPower, requestedPower, backPower);
 
@@ -213,12 +226,13 @@ frozen::string const& SurplusPowerClass::getStatusText(SurplusPowerClass::Surplu
 {
     static const frozen::string missing = "programmer error: missing status text";
 
-    static const frozen::map<SurplusState, frozen::string, 5> texts = {
+    static const frozen::map<SurplusState, frozen::string, 6> texts = {
         { SurplusState::IDLE, "Idle" },
         { SurplusState::TRY_MORE, "Try more power" },
         { SurplusState::REDUCE_POWER, "Reduce power" },
         { SurplusState::IN_TARGET, "In target range" },
-        { SurplusState::MAXIMUM_POWER, "Maximum power" }
+        { SurplusState::MAXIMUM_POWER, "Maximum power" },
+        { SurplusState::KEEP_LAST_POWER, "Keep last power" }
     };
 
     auto iter = texts.find(state);

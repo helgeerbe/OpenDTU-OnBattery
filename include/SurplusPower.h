@@ -20,6 +20,7 @@ class SurplusPowerClass {
             REDUCE_POWER = 2,
             IN_TARGET = 3,
             MAXIMUM_POWER = 4,
+            KEEP_LAST_POWER = 5
         };
 
         enum class Text : uint8_t {
