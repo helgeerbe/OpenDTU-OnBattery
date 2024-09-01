@@ -304,11 +304,6 @@ void Controller::processDataPoints(DataPointContainer const& dataPoints)
 {
     _stats->updateFrom(dataPoints);
 
-    using Label = JbdBms::DataPointLabel;
-
-    auto oProtocolVersion = dataPoints.get<Label::ProtocolVersion>();
-    if (oProtocolVersion.has_value()) { _protocolVersion = *oProtocolVersion; }
-
     if (!_verboseLogging) { return; }
 
     auto iter = dataPoints.cbegin();

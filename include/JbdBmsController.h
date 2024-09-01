@@ -80,7 +80,6 @@ class Controller : public BatteryProvider {
         uint32_t _lastStatusPrinted = 0;
         uint32_t _lastRequest = 0;
         uint8_t _dataLength = 0;
-        uint8_t _protocolVersion = -1;
         JbdBms::SerialResponse::tData _buffer = {};
         std::shared_ptr<JbdBmsBatteryStats> _stats =
             std::make_shared<JbdBmsBatteryStats>();

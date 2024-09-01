@@ -41,12 +41,14 @@ SerialResponse::SerialResponse(tData&& raw)
             _dp.add<Label::BatteryCurrentMilliAmps>(static_cast<int32_t>(get<int16_t>(pos)) * 10); // Current
             _dp.add<Label::ActualBatteryCapacityAmpHours>(static_cast<uint32_t>(get<uint16_t>(pos)) * 10 / 1000); // remaining capacity
             _dp.add<Label::BatteryCapacitySettingAmpHours>(static_cast<uint32_t>(get<uint16_t>(pos)) * 10 / 1000); // nominal capacity
-            //_dp.add<Label::BatteryCycleCapacity>(get<uint32_t>(pos));
             _dp.add<Label::BatteryCycles>(get<uint16_t>(pos));
             _dp.add<Label::DateOfManufacturing >(getProductionDate(pos));
-            _dp.add<Label::BalancingEnabled>(bool(get<uint16_t>(pos))); // Equilibrium
 
-            get<uint16_t>(pos); // Equilibrium_High
+            bool balancingEnabled = false;
+            balancingEnabled |= bool(get<uint16_t>(pos)); // Equilibrium
+            balancingEnabled |= bool(get<uint16_t>(pos)); // Equilibrium_High
+            _dp.add<Label::BalancingEnabled>(balancingEnabled);
+
             _dp.add<Label::AlarmsBitmask>(get<uint16_t>(pos)); // Protection status
 
             uint8_t softwareVersion = get<uint8_t>(pos);
@@ -61,14 +63,15 @@ SerialResponse::SerialResponse(tData&& raw)
             uint8_t fetControl = get<uint8_t>(pos); // FET control status
             const uint8_t chargingMask = (1 << 0);
             const uint8_t dischargingMask = (1 << 1);
-            _dp.add<Label::BatteryChargeEnabled>(bool(fetControl & chargingMask));
-            _dp.add<Label::BatteryDischargeEnabled>(bool(fetControl & dischargingMask));
+            bool fetChargeEnabled = bool(fetControl & chargingMask);
+            bool fetDischargeEnabled = bool(fetControl & dischargingMask);
+            _dp.add<Label::BatteryChargeEnabled>(fetChargeEnabled);
+            _dp.add<Label::BatteryDischargeEnabled>(fetDischargeEnabled);
 
             _dp.add<Label::BatteryCellAmount>(static_cast<uint16_t>(get<uint8_t>(pos))); // number of battery strings
             _dp.add<Label::BatteryTemperatureSensorAmount>(get<uint8_t>(pos)); // number of ntc
             _dp.add<Label::BatteryTempOneCelsius>(getTemperature(pos)); // ntc temperature one
             _dp.add<Label::BatteryTempTwoCelsius>(getTemperature(pos)); // ntc temperature two
-
         }
         else if (getCommand() == Command::ReadCellVoltages)
         {

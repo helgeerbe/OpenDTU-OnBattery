@@ -318,18 +318,6 @@ void JbdBmsBatteryStats::getJsonData(JsonVariant& root, bool verbose) const
         addLiveViewValue(root, "power", current * voltage , "W", 2);
     }
 
-    auto oTemperatureBms = _dataPoints.get<Label::BmsTempCelsius>();
-    if (oTemperatureBms.has_value()) {
-        addLiveViewValue(root, "bmsTemp", *oTemperatureBms, "°C", 0);
-    }
-
-    /*
-    auto oBatteryCycles = _dataPoints.get<Label::BatteryCycles>();
-    if (oBatteryCycles.has_value()) {
-        addLiveViewValue(root, "chargeCycles", *oBatteryCycles, "", 0);
-    }
-    */
-
     auto oBatteryChargeEnabled = _dataPoints.get<Label::BatteryChargeEnabled>();
     if (oBatteryChargeEnabled.has_value()) {
         addLiveViewTextValue(root, "chargeEnabled", (*oBatteryChargeEnabled?"yes":"no"));
@@ -604,7 +592,6 @@ void JbdBmsBatteryStats::mqttPublish() const
 
     static std::vector<Label> mqttSkip = {
         Label::CellsMilliVolt, // complex data format
-        Label::ModificationPassword, // sensitive data
         Label::BatterySoCPercent // already published by base class
         // NOTE that voltage is also published by the base class, however, we
         // previously published it only from here using the respective topic.
@@ -653,15 +640,6 @@ void JbdBmsBatteryStats::mqttPublish() const
             auto bit = iter->first;
             String value = (*oAlarms & static_cast<uint16_t>(bit))?"1":"0";
             MqttSettings.publish(String("battery/alarms/") + iter->second.data(), value);
-        }
-    }
-
-    auto oStatus = _dataPoints.get<Label::StatusBitmask>();
-    if (oStatus.has_value()) {
-        for (auto iter = JbdBms::StatusBitTexts.begin(); iter != JbdBms::StatusBitTexts.end(); ++iter) {
-            auto bit = iter->first;
-            String value = (*oStatus & static_cast<uint16_t>(bit))?"1":"0";
-            MqttSettings.publish(String("battery/status/") + iter->second.data(), value);
         }
     }
 
@@ -751,19 +729,6 @@ void JbdBmsBatteryStats::updateFrom(JbdBms::DataPointContainer const& dp)
     using Label = JbdBms::DataPointLabel;
 
     setManufacturer("JBDBMS");
-    auto oProductId = dp.get<Label::ProductId>();
-    if (oProductId.has_value()) {
-        // the first twelve chars are expected to be the "User Private Data"
-        // setting (see smartphone app). the remainder is expected be the BMS
-        // name, which can be changed at will using the smartphone app. so
-        // there is not always a "JK" in this string. if there is, we still cut
-        // the string there to avoid possible regressions.
-        _manufacturer = oProductId->substr(12).c_str();
-        auto pos = oProductId->rfind("JBD");
-        if (pos != std::string::npos) {
-            _manufacturer = oProductId->substr(pos).c_str();
-        }
-    }
 
     auto oSoCValue = dp.get<Label::BatterySoCPercent>();
     if (oSoCValue.has_value()) {
@@ -802,22 +767,14 @@ void JbdBmsBatteryStats::updateFrom(JbdBms::DataPointContainer const& dp)
         _cellVoltageTimestamp = millis();
     }
 
-    auto oVersion = _dataPoints.get<Label::BmsSoftwareVersion>();
-    if (oVersion.has_value()) {
-        // raw: "11.XW_S11.262H_"
-        //   => Hardware "V11.XW" (displayed in Android app)
-        //   => Software "V11.262H" (displayed in Android app)
-        auto first = oVersion->find('_');
-        if (first != std::string::npos) {
-            _hwversion = oVersion->substr(0, first).c_str();
+    auto oSoftwareVersion = _dataPoints.get<Label::BmsSoftwareVersion>();
+    if (oSoftwareVersion.has_value()) {
+        _fwversion = oSoftwareVersion->c_str();
+    }
 
-            auto second = oVersion->find('_', first + 1);
-
-            // the 'S' seems to be merely an indicator for "software"?
-            if (oVersion->at(first + 1) == 'S') { first++; }
-
-            _fwversion = oVersion->substr(first + 1, second - first - 1).c_str();
-        }
+    auto oHardwareVersion = _dataPoints.get<Label::BmsHardwareVersion>();
+    if (oHardwareVersion.has_value()) {
+        _hwversion = oHardwareVersion->c_str();
     }
 
     _lastUpdate = millis();
