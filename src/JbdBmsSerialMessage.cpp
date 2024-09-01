@@ -54,9 +54,9 @@ SerialResponse::SerialResponse(tData&& raw)
             uint8_t softwareVersion = get<uint8_t>(pos);
             uint8_t digitOne = softwareVersion & 0x0F;
             uint8_t digitTwo = softwareVersion >> 4;
-            std::ostringstream oss;
-            oss << digitOne << "." << digitTwo;
-            _dp.add<Label::BmsSoftwareVersion>(oss.str()); // Software version
+            char buffer[6];
+            sprintf(buffer, "%d.%d", digitOne, digitTwo);
+            _dp.add<Label::BmsSoftwareVersion>(std::string(buffer)); // Software version
 
             _dp.add<Label::BatterySoCPercent>(get<uint8_t>(pos)); // RSOC
 
