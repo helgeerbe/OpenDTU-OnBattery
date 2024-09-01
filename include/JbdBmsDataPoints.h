@@ -12,19 +12,19 @@
 namespace JbdBms {
 
 #define JBD_PROTECTION_STATUS(fnc) \
-    fnc(MonomerOverVoltageProtection, (1<<0)) \
-    fnc(MonomerUnderVoltageProtection, (1<<1)) \
-    fnc(WholeGroupOverVoltageProtection, (1<<2)) \
-    fnc(WholeGroupUnderVoltageProtection, (1<<3)) \
-    fnc(ChargingOverTemperatureProtection, (1<<4)) \
-    fnc(ChargingLowTemperatureProtection, (1<<5)) \
-    fnc(DischargingOverTemperatureProtection, (1<<6)) \
-    fnc(DischargingLowTemperatureProtection, (1<<7)) \
-    fnc(ChargingOverCurrentProtection, (1<<8)) \
-    fnc(DischargeOverCurrentProtection, (1<<9)) \
-    fnc(ShortcircuitProtection, (1<<10)) \
-    fnc(FrontEndDetectionIcError, (1<<11)) \
-    fnc(SotwareLockMOS, (1<<12)) \
+    fnc(CellOverVoltage, (1<<0)) \
+    fnc(CellUnderVoltage, (1<<1)) \
+    fnc(PackOverVoltage, (1<<2)) \
+    fnc(PackUnderVoltage, (1<<3)) \
+    fnc(ChargingOverTemperature, (1<<4)) \
+    fnc(ChargingLowTemperature, (1<<5)) \
+    fnc(DischargingOverTemperature, (1<<6)) \
+    fnc(DischargingLowTemperature, (1<<7)) \
+    fnc(ChargingOverCurrent, (1<<8)) \
+    fnc(DischargeOverCurrent, (1<<9)) \
+    fnc(ShortCircuit, (1<<10)) \
+    fnc(IcFrontEndError, (1<<11)) \
+    fnc(MosSotwareLock, (1<<12)) \
     fnc(Reserved1, (1<<13)) \
     fnc(Reserved2, (1<<14)) \
     fnc(Reserved3, (1<<15))

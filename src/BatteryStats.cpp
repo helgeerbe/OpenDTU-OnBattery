@@ -369,19 +369,22 @@ void JbdBmsBatteryStats::getJsonData(JsonVariant& root, bool verbose) const
         addLiveView##t(root, "JbdBmsIssue"#x, x > 0);
 
         //ISSUE(Warning, LowCapacity);
-        ISSUE(Alarm, MonomerOverVoltageProtection);
-        ISSUE(Alarm, MonomerUnderVoltageProtection);
-        ISSUE(Alarm, WholeGroupOverVoltageProtection);
-        ISSUE(Alarm, WholeGroupUnderVoltageProtection);
-        ISSUE(Alarm, ChargingOverTemperatureProtection);
-        ISSUE(Alarm, ChargingLowTemperatureProtection);
-        ISSUE(Alarm, DischargingOverTemperatureProtection);
-        ISSUE(Alarm, DischargingLowTemperatureProtection);
-        ISSUE(Alarm, ChargingOverCurrentProtection);
-        ISSUE(Alarm, DischargeOverCurrentProtection);
-        ISSUE(Alarm, ShortcircuitProtection);
-        ISSUE(Alarm, FrontEndDetectionIcError);
-        ISSUE(Alarm, SotwareLockMOS);
+        ISSUE(Alarm, CellOverVoltage);
+        ISSUE(Alarm, CellUnderVoltage);
+        ISSUE(Alarm, PackOverVoltage);
+        ISSUE(Alarm, PackUnderVoltage);
+        ISSUE(Alarm, ChargingOverTemperature);
+        ISSUE(Alarm, ChargingLowTemperature);
+        ISSUE(Alarm, DischargingOverTemperature);
+        ISSUE(Alarm, DischargingLowTemperature);
+        ISSUE(Alarm, ChargingOverCurrent);
+        ISSUE(Alarm, DischargeOverCurrent);
+        ISSUE(Alarm, ShortCircuit);
+        ISSUE(Alarm, IcFrontEndError);
+        ISSUE(Alarm, MosSotwareLock);
+        ISSUE(Alarm, Reserved1);
+        ISSUE(Alarm, Reserved2);
+        ISSUE(Alarm, Reserved3);
 #undef ISSUE
     }
 }
