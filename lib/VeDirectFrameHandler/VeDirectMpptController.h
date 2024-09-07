@@ -38,8 +38,8 @@ private:
 
 struct VeDirectHexQueue {
     VeDirectHexRegister _hexRegister;   // hex register
-    int8_t _readPeriod;                 // time period in sec until we send the command again
-    int32_t _lastSendTime;              // time stamp in milli sec of last send
+    uint8_t _readPeriod;                // time period in sec until we send the command again
+    uint32_t _lastSendTime;             // time stamp in milli sec of last send
 };
 
 class VeDirectMpptController : public VeDirectFrameHandler<veMpptStruct> {
@@ -57,14 +57,16 @@ private:
     bool hexDataHandler(VeDirectHexData const &data) final;
     bool processTextDataDerived(std::string const& name, std::string const& value) final;
     void frameValidEvent() final;
+    void sendNextHexCommandFromQueue(void);
+    bool isHexCommandPossible(void);
     MovingAverage<float, 5> _efficiency;
 
-    int32_t _sendTimeStamp = 0;             // timestamp of last command
-    int32_t _sendTimeout = 0;               // timeout until we send the next command from the queue
-    int8_t _sendQueueNr = 0;                // actual queue position;
+    uint32_t _sendTimeout = 0;          // timeout until we send the next command from the queue
+    size_t _sendQueueNr = 0;            // actual queue position;
 
     // for slow changing values we use a send time period of 4 sec
-    std::array<VeDirectHexQueue, 5> _hexQueue { VeDirectHexRegister::NetworkTotalDcInputPower, 1, 0,
+    #define HIGH_PRIO_COMMAND 1
+    std::array<VeDirectHexQueue, 5> _hexQueue { VeDirectHexRegister::NetworkTotalDcInputPower, HIGH_PRIO_COMMAND, 0,
                                                 VeDirectHexRegister::ChargeControllerTemperature, 4, 0,
                                                 VeDirectHexRegister::SmartBatterySenseTemperature, 4, 0,
                                                 VeDirectHexRegister::BatteryFloatVoltage, 4, 0,
