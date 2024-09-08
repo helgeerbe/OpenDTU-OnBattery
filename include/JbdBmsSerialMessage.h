@@ -47,7 +47,6 @@ class SerialMessage {
         template<typename It> int16_t getTemperature(It&& pos) const;
         template<typename It> std::string getString(It&& pos, size_t len, bool replaceZeroes = false) const;
         template<typename It> std::string getProductionDate(It&& pos) const;
-        void processBatteryCurrent(tData::const_iterator& pos);
         template<typename T> void set(tData::iterator const& pos, T val);
         uint16_t calcChecksum() const;
         void updateChecksum();
@@ -58,7 +57,6 @@ class SerialMessage {
 
 class SerialResponse : public SerialMessage {
     public:
-
         enum class Status : uint8_t {
             Ok = 0x00,
             Error = 0x80
@@ -77,8 +75,6 @@ class SerialResponse : public SerialMessage {
 
 class SerialCommand : public SerialMessage {
     public:
-        //using Command = SerialMessage::Command;
-
         enum class Status : uint8_t {
             Read = 0xA5,
             Write = 0x5A,

@@ -143,7 +143,6 @@ void Controller::sendRequest(uint8_t pollInterval)
         digitalWrite(_txEnablePin, HIGH); // enable transmission
     }
 
-    //readCmd.printMessage(); // TODO: Only for testing. Comment out
     _upSerial->write(readCmd.data(), readCmd.size());
 
     if (Interface::Transceiver == getInterface()) {
@@ -179,47 +178,29 @@ void Controller::rxData(uint8_t inbyte)
 {
     _buffer.push_back(inbyte);
 
-    /* Print inbyte
-    if (inbyte == 0xDD) {MessageOutput.printf("[%11.3f] JBD BMS: Byte received: %02x", static_cast<double>(millis())/1000, inbyte);}
-    MessageOutput.printf(" %02x", inbyte);
-    if (inbyte == 0x77) {MessageOutput.println();}
-    */
-
     switch(_readState) {
         case ReadState::Idle: // unsolicited message from BMS
         case ReadState::WaitingForFrameStart:
             if (inbyte == SerialMessage::startMarker) {
-                //MessageOutput.printf("[JBD BMS] Byte received: startMarker received:  %02x.", inbyte);
-                //MessageOutput.println();
                 return setReadState(ReadState::FrameStartReceived);
             }
             break;
         case ReadState::FrameStartReceived:
-            //MessageOutput.printf("[JBD BMS] Byte received: FrameStartReceived:  %02x.", inbyte);
-            //MessageOutput.println();
             return setReadState(ReadState::StateReceived);
             break;
         case ReadState::StateReceived:
-            //MessageOutput.printf("[JBD BMS] Byte received: StateReceived:  %02x.", inbyte);
-            //MessageOutput.println();
             return setReadState(ReadState::CommandCodeReceived);
             break;
         case ReadState::CommandCodeReceived:
             _dataLength = inbyte;
             if (_dataLength == 0) {
-                //MessageOutput.printf("[JBD BMS] Byte received: CommandCodeReceived with dataLength == 0:  %02x.", inbyte);
-                //MessageOutput.println();
                 return setReadState(ReadState::DataContentReceived);
             }
             else {
-                //MessageOutput.printf("[JBD BMS] Byte received: CommandCodeReceived with dataLength > 0:  %02x.", inbyte);
-                //MessageOutput.println();
                 return setReadState(ReadState::ReadingDataContent);
             }
             break;
         case ReadState::ReadingDataContent:
-            //MessageOutput.printf("[JBD BMS] Byte received: ReadingDataContent:%02x, remaining datalength %i.", inbyte, _dataLength);
-            //MessageOutput.println();
             _dataLength--;
             if (_dataLength == 0) {
                 return setReadState(ReadState::DataContentReceived);
@@ -227,36 +208,13 @@ void Controller::rxData(uint8_t inbyte)
             return setReadState(ReadState::ReadingDataContent);
             break;
         case ReadState::DataContentReceived:
-            //MessageOutput.printf("[JBD BMS] Byte received: DataContentReceived. First Checksum byte:  %02x.", inbyte);
-            //MessageOutput.println();
             return setReadState(ReadState::ReadingCheckSum);
             break;
         case ReadState::ReadingCheckSum:
-            //MessageOutput.printf("[JBD BMS] Byte received: DataContentReceived. Second Checksum byte:  %02x.", inbyte);
-            //MessageOutput.println();
             return setReadState(ReadState::CheckSumReceived);
             break;
         case ReadState::CheckSumReceived:
-            //MessageOutput.printf("[JBD BMS] Byte received: CheckSumReceived. Next byte:  %02x\n.", inbyte);
-            //MessageOutput.println();
             if (inbyte == SerialMessage::endMarker) {
-                //MessageOutput.printf("[JBD BMS] Byte received: endMarker received.");
-                //MessageOutput.println();
-
-                /*
-                // Test with Dummy Messages
-                if (_buffer[1] == 0x03) {
-
-                    // test AlarmBitMask with FFFF
-                    _buffer[20] = uint8_t (0xFF);
-                    _buffer[21] = uint8_t (0xFF);
-                    // _buffer = {0xdd, 0x03, 0x00, 0x26, 0x0a, 0x4a, 0x00, 0x00, 0x20, 0xc5, 0x4e, 0x20, 0x00, 0x00, 0x2f, 0x9d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x25, 0x2a, 0x03, 0x08, 0x03, 0x0b, 0x93, 0x0b, 0x88, 0x0b, 0x88, 0x00, 0x00, 0x00, 0x4e, 0x20, 0x20, 0xc5, 0x00, 0x00, 0xf9, 0xf3, 0x77};
-                }
-                uint16_t checksumUpdate = (~std::accumulate(_buffer.cbegin()+2, _buffer.cend()-3, 0) + 0x01);
-                *(_buffer.end()-3) = uint8_t (checksumUpdate >> 8);
-                *(_buffer.end()-2) = uint8_t (checksumUpdate);
-                */
-
                 return frameComplete();
             }
             else {
