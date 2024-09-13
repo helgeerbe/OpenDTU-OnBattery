@@ -196,9 +196,7 @@ void Controller::rxData(uint8_t inbyte)
             if (_dataLength == 0) {
                 return setReadState(ReadState::DataContentReceived);
             }
-            else {
-                return setReadState(ReadState::ReadingDataContent);
-            }
+            return setReadState(ReadState::ReadingDataContent);
             break;
         case ReadState::ReadingDataContent:
             _dataLength--;
@@ -217,11 +215,9 @@ void Controller::rxData(uint8_t inbyte)
             if (inbyte == SerialMessage::endMarker) {
                 return frameComplete();
             }
-            else {
-                MessageOutput.printf("[JBD BMS] Invalid Frame: end marker not found.");
-                MessageOutput.println();
-                return reset();
-            }
+            MessageOutput.printf("[JBD BMS] Invalid Frame: end marker not found.");
+            MessageOutput.println();
+            return reset();
             break;
     }
     reset();
