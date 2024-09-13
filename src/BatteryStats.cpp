@@ -747,7 +747,7 @@ void JbdBmsBatteryStats::updateFrom(JbdBms::DataPointContainer const& dp)
 {
     using Label = JbdBms::DataPointLabel;
 
-    _manufacturer = "JBDBMS";
+    setManufacturer("JBDBMS");
     auto oProductId = dp.get<Label::ProductId>();
     if (oProductId.has_value()) {
         // the first twelve chars are expected to be the "User Private Data"
