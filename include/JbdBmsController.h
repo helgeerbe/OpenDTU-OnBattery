@@ -5,10 +5,9 @@
 #include <frozen/string.h>
 
 #include "Battery.h"
+#include "JbdBmsDataPoints.h"
 #include "JbdBmsSerialMessage.h"
 #include "JbdBmsController.h"
-
-class DataPointContainer;
 
 namespace JbdBms {
 
