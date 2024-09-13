@@ -592,11 +592,8 @@ void JbdBmsBatteryStats::mqttPublish() const
 
     static std::vector<Label> mqttSkip = {
         Label::CellsMilliVolt, // complex data format
+        Label::BatteryVoltageMilliVolt, // already published by base class
         Label::BatterySoCPercent // already published by base class
-        // NOTE that voltage is also published by the base class, however, we
-        // previously published it only from here using the respective topic.
-        // to avoid a breaking change, we publish the value again using the
-        // "old" topic.
     };
 
     // regularly publish all topics regardless of whether or not their value changed
