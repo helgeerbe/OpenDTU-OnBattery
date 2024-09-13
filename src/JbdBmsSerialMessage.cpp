@@ -45,8 +45,8 @@ SerialResponse::SerialResponse(tData&& raw)
             _dp.add<Label::DateOfManufacturing >(getProductionDate(pos));
 
             bool balancingEnabled = false;
-            balancingEnabled |= bool(get<uint16_t>(pos)); // Equilibrium
-            balancingEnabled |= bool(get<uint16_t>(pos)); // Equilibrium_High
+            balancingEnabled |= static_cast<bool>(get<uint16_t>(pos)); // Equilibrium
+            balancingEnabled |= static_cast<bool>(get<uint16_t>(pos)); // Equilibrium_High
             _dp.add<Label::BalancingEnabled>(balancingEnabled);
 
             _dp.add<Label::AlarmsBitmask>(get<uint16_t>(pos)); // Protection status
@@ -55,7 +55,7 @@ SerialResponse::SerialResponse(tData&& raw)
             uint8_t digitOne = softwareVersion & 0x0F;
             uint8_t digitTwo = softwareVersion >> 4;
             char buffer[6];
-            sprintf(buffer, "%d.%d", digitOne, digitTwo);
+            snprintf(buffer, sizeof(buffer), "%d.%d", digitOne, digitTwo);
             _dp.add<Label::BmsSoftwareVersion>(std::string(buffer)); // Software version
 
             _dp.add<Label::BatterySoCPercent>(get<uint8_t>(pos)); // RSOC
@@ -63,8 +63,8 @@ SerialResponse::SerialResponse(tData&& raw)
             uint8_t fetControl = get<uint8_t>(pos); // FET control status
             const uint8_t chargingMask = (1 << 0);
             const uint8_t dischargingMask = (1 << 1);
-            bool fetChargeEnabled = bool(fetControl & chargingMask);
-            bool fetDischargeEnabled = bool(fetControl & dischargingMask);
+            bool fetChargeEnabled = static_cast<bool>(fetControl & chargingMask);
+            bool fetDischargeEnabled = static_cast<bool>(fetControl & dischargingMask);
             _dp.add<Label::BatteryChargeEnabled>(fetChargeEnabled);
             _dp.add<Label::BatteryDischargeEnabled>(fetDischargeEnabled);
 
