@@ -182,7 +182,8 @@
             "P": "Leistung (berechnet)",
             "V": "Spannung",
             "I": "Strom",
-            "E": "Effizienz (berechnet)"
+            "E": "Effizienz (berechnet)",
+            "SBSTemperature": "Batterietemperatur"
         },
         "section_input": "Eingang (Solarpanele)",
         "input": {

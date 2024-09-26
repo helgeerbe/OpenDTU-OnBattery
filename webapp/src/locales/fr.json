@@ -182,7 +182,8 @@
             "P": "Power (calculated)",
             "V": "Voltage",
             "I": "Current",
-            "E": "Efficiency (calculated)"
+            "E": "Efficiency (calculated)",
+            "SBSTemperature": "Battery temperature"
         },
         "section_input": "Input (Solar Panels)",
         "input": {
