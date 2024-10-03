@@ -287,9 +287,7 @@ bool VeDirectMpptController::isHexCommandPossible(void) {
 	// charger periodically sends human readable (TEXT) data to the serial port. For firmware
 	// versions v1.53 and above, the charger always periodically sends TEXT data to the serial port.
 	// --> We just use hex commands for firmware >= 1.53 to keep text messages alive
-	// Note: First we send queries (timing improvement)
-	//return (_canSend && (_tmpFrame.getFwVersionAsInteger() >= 153));
-	return true;
+	return (_canSend && (_tmpFrame.getFwVersionAsInteger() >= 153));
 }
 
 
